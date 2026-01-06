@@ -1,15 +1,15 @@
-import {Config, ConfigPropName, Flow, ViewportProps} from './types';
-import {Props as TooltipProps} from './Tooltip';
+import { Config, ConfigPropName, Flow, ViewportProps } from './types';
+import { Props as TooltipProps } from './Tooltip';
 import * as queryString from 'query-string';
-import {viewport} from '@mapbox/geo-viewport';
-import {parseBoolConfigProp, parseNumberConfigProp} from './config';
-import {COLOR_SCHEME_KEYS} from './colors';
-import {csvFormatRows, csvParseRows} from 'd3-dsv';
-import {Reducer} from 'react';
-import {easeCubic} from 'd3-ease';
-import {timeFormat, timeParse} from 'd3-time-format';
-import {ParsedUrlQuery} from 'querystring';
-import {FlyToInterpolator} from '@deck.gl/core';
+import { viewport } from '@mapbox/geo-viewport';
+import { parseBoolConfigProp, parseNumberConfigProp } from './config';
+import { COLOR_SCHEME_KEYS } from './colors';
+import { csvFormatRows, csvParseRows } from 'd3-dsv';
+import { Reducer } from 'react';
+import { easeCubic } from 'd3-ease';
+import { timeFormat, timeParse } from 'd3-time-format';
+import { ParsedUrlQuery } from 'querystring';
+import { FlyToInterpolator } from '@deck.gl/core';
 
 export const MIN_ZOOM_LEVEL = 0;
 export const MAX_ZOOM_LEVEL = 20;
@@ -102,100 +102,100 @@ export enum ActionType {
 
 export type Action =
   | {
-      type: ActionType.SET_VIEWPORT;
-      viewport: ViewportProps;
-      adjustViewportToLocations?: boolean;
-    }
+    type: ActionType.SET_VIEWPORT;
+    viewport: ViewportProps;
+    adjustViewportToLocations?: boolean;
+  }
   | {
-      type: ActionType.ZOOM_IN;
-    }
+    type: ActionType.ZOOM_IN;
+  }
   | {
-      type: ActionType.ZOOM_OUT;
-    }
+    type: ActionType.ZOOM_OUT;
+  }
   | {
-      type: ActionType.RESET_BEARING_PITCH;
-    }
+    type: ActionType.RESET_BEARING_PITCH;
+  }
   | {
-      type: ActionType.SET_HIGHLIGHT;
-      highlight: Highlight | undefined;
-    }
+    type: ActionType.SET_HIGHLIGHT;
+    highlight: Highlight | undefined;
+  }
   | {
-      type: ActionType.CLEAR_SELECTION;
-    }
+    type: ActionType.CLEAR_SELECTION;
+  }
   | {
-      type: ActionType.SELECT_LOCATION;
-      locationId: string;
-      incremental: boolean;
-    }
+    type: ActionType.SELECT_LOCATION;
+    locationId: string;
+    incremental: boolean;
+  }
   | {
-      type: ActionType.SET_SELECTED_LOCATIONS;
-      selectedLocations: string[] | undefined;
-    }
+    type: ActionType.SET_SELECTED_LOCATIONS;
+    selectedLocations: string[] | undefined;
+  }
   | {
-      type: ActionType.SET_LOCATION_FILTER_MODE;
-      mode: LocationFilterMode;
-    }
+    type: ActionType.SET_LOCATION_FILTER_MODE;
+    mode: LocationFilterMode;
+  }
   | {
-      type: ActionType.SET_TIME_RANGE;
-      range: [Date, Date];
-    }
+    type: ActionType.SET_TIME_RANGE;
+    range: [Date, Date];
+  }
   | {
-      type: ActionType.SET_TOOLTIP;
-      tooltip: TooltipProps | undefined;
-    }
+    type: ActionType.SET_TOOLTIP;
+    tooltip: TooltipProps | undefined;
+  }
   | {
-      type: ActionType.SET_CLUSTERING_ENABLED;
-      clusteringEnabled: boolean;
-    }
+    type: ActionType.SET_CLUSTERING_ENABLED;
+    clusteringEnabled: boolean;
+  }
   | {
-      type: ActionType.SET_CLUSTERING_AUTO;
-      clusteringAuto: boolean;
-    }
+    type: ActionType.SET_CLUSTERING_AUTO;
+    clusteringAuto: boolean;
+  }
   | {
-      type: ActionType.SET_ANIMATION_ENABLED;
-      animationEnabled: boolean;
-    }
+    type: ActionType.SET_ANIMATION_ENABLED;
+    animationEnabled: boolean;
+  }
   | {
-      type: ActionType.SET_LOCATION_TOTALS_ENABLED;
-      locationTotalsEnabled: boolean;
-    }
+    type: ActionType.SET_LOCATION_TOTALS_ENABLED;
+    locationTotalsEnabled: boolean;
+  }
   | {
-      type: ActionType.SET_ADAPTIVE_SCALES_ENABLED;
-      adaptiveScalesEnabled: boolean;
-    }
+    type: ActionType.SET_ADAPTIVE_SCALES_ENABLED;
+    adaptiveScalesEnabled: boolean;
+  }
   | {
-      type: ActionType.SET_DARK_MODE;
-      darkMode: boolean;
-    }
+    type: ActionType.SET_DARK_MODE;
+    darkMode: boolean;
+  }
   | {
-      type: ActionType.SET_FADE_ENABLED;
-      fadeEnabled: boolean;
-    }
+    type: ActionType.SET_FADE_ENABLED;
+    fadeEnabled: boolean;
+  }
   | {
-      type: ActionType.SET_BASE_MAP_ENABLED;
-      baseMapEnabled: boolean;
-    }
+    type: ActionType.SET_BASE_MAP_ENABLED;
+    baseMapEnabled: boolean;
+  }
   | {
-      type: ActionType.SET_FADE_AMOUNT;
-      fadeAmount: number;
-    }
+    type: ActionType.SET_FADE_AMOUNT;
+    fadeAmount: number;
+  }
   | {
-      type: ActionType.SET_BASE_MAP_OPACITY;
-      baseMapOpacity: number;
-    }
+    type: ActionType.SET_BASE_MAP_OPACITY;
+    baseMapOpacity: number;
+  }
   | {
-      type: ActionType.SET_MANUAL_CLUSTER_ZOOM;
-      manualClusterZoom: number | undefined;
-    }
+    type: ActionType.SET_MANUAL_CLUSTER_ZOOM;
+    manualClusterZoom: number | undefined;
+  }
   | {
-      type: ActionType.SET_COLOR_SCHEME;
-      colorSchemeKey: string;
-    };
+    type: ActionType.SET_COLOR_SCHEME;
+    colorSchemeKey: string;
+  };
 
 function mainReducer(state: State, action: Action): State {
   switch (action.type) {
     case ActionType.SET_VIEWPORT: {
-      const {viewport, adjustViewportToLocations} = action;
+      const { viewport, adjustViewportToLocations } = action;
       return {
         ...state,
         viewport: {
@@ -210,7 +210,7 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.ZOOM_IN: {
-      const {viewport} = state;
+      const { viewport } = state;
       return {
         ...state,
         viewport: {
@@ -222,7 +222,7 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.ZOOM_OUT: {
-      const {viewport} = state;
+      const { viewport } = state;
       return {
         ...state,
         viewport: {
@@ -234,7 +234,7 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.RESET_BEARING_PITCH: {
-      const {viewport} = state;
+      const { viewport } = state;
       return {
         ...state,
         viewport: {
@@ -246,14 +246,14 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.SET_HIGHLIGHT: {
-      const {highlight} = action;
+      const { highlight } = action;
       return {
         ...state,
         highlight,
       };
     }
     case ActionType.SET_TOOLTIP: {
-      const {tooltip} = action;
+      const { tooltip } = action;
       return {
         ...state,
         tooltip,
@@ -269,7 +269,7 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.SET_SELECTED_LOCATIONS: {
-      const {selectedLocations} = action;
+      const { selectedLocations } = action;
       const isEmpty = !selectedLocations || selectedLocations.length === 0;
       if (isEmpty) {
         return {
@@ -284,22 +284,22 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.SET_LOCATION_FILTER_MODE: {
-      const {mode} = action;
+      const { mode } = action;
       return {
         ...state,
         locationFilterMode: mode,
       };
     }
     case ActionType.SET_TIME_RANGE: {
-      const {range} = action;
+      const { range } = action;
       return {
         ...state,
         selectedTimeRange: range,
       };
     }
     case ActionType.SELECT_LOCATION: {
-      const {selectedLocations} = state;
-      const {locationId, incremental} = action;
+      const { selectedLocations } = state;
+      const { locationId, incremental } = action;
       let nextSelectedLocations;
       if (selectedLocations) {
         const idx = selectedLocations.findIndex((id) => id === locationId);
@@ -328,84 +328,84 @@ function mainReducer(state: State, action: Action): State {
       };
     }
     case ActionType.SET_CLUSTERING_ENABLED: {
-      const {clusteringEnabled} = action;
+      const { clusteringEnabled } = action;
       return {
         ...state,
         clusteringEnabled,
       };
     }
     case ActionType.SET_CLUSTERING_AUTO: {
-      const {clusteringAuto} = action;
+      const { clusteringAuto } = action;
       return {
         ...state,
         clusteringAuto,
       };
     }
     case ActionType.SET_ANIMATION_ENABLED: {
-      const {animationEnabled} = action;
+      const { animationEnabled } = action;
       return {
         ...state,
         animationEnabled,
       };
     }
     case ActionType.SET_LOCATION_TOTALS_ENABLED: {
-      const {locationTotalsEnabled} = action;
+      const { locationTotalsEnabled } = action;
       return {
         ...state,
         locationTotalsEnabled,
       };
     }
     case ActionType.SET_ADAPTIVE_SCALES_ENABLED: {
-      const {adaptiveScalesEnabled} = action;
+      const { adaptiveScalesEnabled } = action;
       return {
         ...state,
         adaptiveScalesEnabled,
       };
     }
     case ActionType.SET_DARK_MODE: {
-      const {darkMode} = action;
+      const { darkMode } = action;
       return {
         ...state,
         darkMode,
       };
     }
     case ActionType.SET_FADE_ENABLED: {
-      const {fadeEnabled} = action;
+      const { fadeEnabled } = action;
       return {
         ...state,
         fadeEnabled,
       };
     }
     case ActionType.SET_BASE_MAP_ENABLED: {
-      const {baseMapEnabled} = action;
+      const { baseMapEnabled } = action;
       return {
         ...state,
         baseMapEnabled,
       };
     }
     case ActionType.SET_FADE_AMOUNT: {
-      const {fadeAmount} = action;
+      const { fadeAmount } = action;
       return {
         ...state,
         fadeAmount,
       };
     }
     case ActionType.SET_BASE_MAP_OPACITY: {
-      const {baseMapOpacity} = action;
+      const { baseMapOpacity } = action;
       return {
         ...state,
         baseMapOpacity,
       };
     }
     case ActionType.SET_MANUAL_CLUSTER_ZOOM: {
-      const {manualClusterZoom} = action;
+      const { manualClusterZoom } = action;
       return {
         ...state,
         manualClusterZoom,
       };
     }
     case ActionType.SET_COLOR_SCHEME: {
-      const {colorSchemeKey} = action;
+      const { colorSchemeKey } = action;
       return {
         ...state,
         colorSchemeKey,
@@ -453,8 +453,8 @@ export function applyStateFromQueryString(draft: State, params: ParsedUrlQuery) 
           latitude,
           longitude,
           zoom,
-          ...(bearing != null ? {bearing} : undefined),
-          ...(pitch != null ? {pitch} : undefined),
+          ...(bearing != null ? { bearing } : undefined),
+          ...(pitch != null ? { pitch } : undefined),
         };
         draft.adjustViewportToLocations = false;
       }
@@ -490,7 +490,7 @@ export function applyStateFromQueryString(draft: State, params: ParsedUrlQuery) 
 export function stateToQueryParams(state: State) {
   const parts: Record<string, string> = {};
   const {
-    viewport: {latitude, longitude, zoom, bearing, pitch},
+    viewport: { latitude, longitude, zoom, bearing, pitch },
     selectedLocations,
   } = state;
   parts.v = csvFormatRows([
@@ -566,8 +566,8 @@ export function getInitialState(config: Config, query: ParsedUrlQuery) {
     manualClusterZoom: undefined,
     fadeEnabled: true,
     clusteringAuto: true,
-    darkMode: parseBoolConfigProp(config[ConfigPropName.COLORS_DARK_MODE] || 'true'),
-    fadeAmount: parseNumberConfigProp(config[ConfigPropName.FADE_AMOUNT], 50),
+    darkMode: parseBoolConfigProp(config[ConfigPropName.COLORS_DARK_MODE] || 'false'),
+    fadeAmount: parseNumberConfigProp(config[ConfigPropName.FADE_AMOUNT], 20),
     baseMapOpacity: parseNumberConfigProp(config[ConfigPropName.BASE_MAP_OPACITY], 75),
     colorSchemeKey: config[ConfigPropName.COLORS_SCHEME],
     selectedFlowsSheet: undefined,

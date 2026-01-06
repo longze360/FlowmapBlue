@@ -19,6 +19,7 @@ export enum ConfigPropName {
   CLUSTER_ON_ZOOM = 'clustering',
   HIDE_DATA_LINK = 'dataLink.hide',
   FLOWS_SHEETS = 'flows.sheets',
+  MAP_STYLE = 'mapStyle',
 }
 
 export interface ConfigProp {
@@ -51,7 +52,7 @@ export interface LocationTotals {
 }
 
 export function isLocationCluster(l: Location | Cluster.Cluster): l is Cluster.Cluster {
-  const {zoom} = l as Cluster.Cluster;
+  const { zoom } = l as Cluster.Cluster;
   return zoom !== undefined;
 }
 
@@ -89,17 +90,17 @@ export interface ViewportProps {
 
 export declare type AsyncState<T> =
   | {
-      loading: boolean;
-      error?: undefined;
-      value?: undefined;
-    }
+    loading: boolean;
+    error?: undefined;
+    value?: undefined;
+  }
   | {
-      loading?: false;
-      error: Error;
-      value?: undefined;
-    }
+    loading?: false;
+    error: Error;
+    value?: undefined;
+  }
   | {
-      loading?: false;
-      error?: undefined;
-      value: T;
-    };
+    loading?: false;
+    error?: undefined;
+    value: T;
+  };

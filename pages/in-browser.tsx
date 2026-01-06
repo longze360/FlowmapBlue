@@ -1,13 +1,14 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
-import {Button, H5, Intent, TextArea} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-import {dsvFormat} from 'd3-dsv';
-import FlowMap, {DEFAULT_CONFIG, Flow, Location, MapContainer, prepareFlows} from '../core';
-import {PromiseState} from 'react-refetch';
+import FlowMap, { DEFAULT_CONFIG, Flow, Location, MapContainer } from '../core';
+import { PromiseState } from 'react-refetch';
 import Layout from '../core/Layout';
-import {useRouter} from 'next/router';
+import { useRouter } from 'next/router';
 import md5 from 'blueimp-md5';
+import DataImport from '../components/DataImport';
+import { dsvFormat } from 'd3-dsv';
+import { prepareFlows } from '../core';
+import { Spinner } from '@blueprintjs/core';
 
 interface DataProps {
   locations: Location[];
@@ -15,7 +16,7 @@ interface DataProps {
 }
 
 const FlowMapContainer = (props: DataProps) => {
-  const {flows, locations} = props;
+  const { flows, locations } = props;
   return (
     <MapContainer>
       <FlowMap
@@ -30,99 +31,106 @@ const FlowMapContainer = (props: DataProps) => {
   );
 };
 
-const ButtonArea = styled.div`
-  text-align: right;
-`;
-
-const Container = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: min-content 1fr min-content;
-  column-gap: 1rem;
-  row-gap: 0.5rem;
-  align-items: center;
-  & > textarea {
-    min-height: 350px;
-    height: 100%;
-    font-size: 12px !important;
-    white-space: pre;
-    font-family: monospace;
-  }
+const Header = styled.div`
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  text-align: center;
+  margin-bottom: 30px;
+  border-radius: 8px;
 `;
 
 const InBrowserFlowMap = () => {
-  const [locationsCsv, setLocationsCsv] = useState(
-    `id,name,lat,lon
+  const initialLocations = `id,name,lat,lon
 1,New York,40.713543,-74.011219
 2,London,51.507425,-0.127738
-3,Rio de Janeiro,-22.906241,-43.180244`,
-  );
-  const [flowsCsv, setFlowsCsv] = useState(
-    `origin,dest,count
+3,Rio de Janeiro,-22.906241,-43.180244`;
+  const initialFlows = `origin,dest,count
 1,2,42
 2,1,51
 3,1,50
 2,3,40
 1,3,22
-3,2,42`,
-  );
+3,2,42`;
+
   const router = useRouter();
-  const {hash} = router.query;
+  const { hash, project: projectId } = router.query;
   const [data, setData] = useState<DataProps>();
-  const handleVisualize = () => {
-    const data = {
-      locations: dsvFormat(',').parse(locationsCsv, (row: any) => ({
-        ...row,
-        lat: +row.lat,
-        lon: +row.lon,
-      })),
-      flows: prepareFlows(dsvFormat(',').parse(flowsCsv)),
-    };
-    setData(data);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (projectId) {
+      fetchProjectData(projectId as string);
+    }
+  }, [projectId]);
+
+  const fetchProjectData = async (id: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/projects/${id}`);
+      const project = await res.json();
+      if (project && project.locationData && project.flowData) {
+        const locMapping = JSON.parse(project.locationData.mapping);
+        const flowMapping = JSON.parse(project.flowData.mapping);
+
+        const parsedData = {
+          locations: dsvFormat(',').parse(project.locationData.csvContent, (row: any) => ({
+            ...row,
+            id: row[locMapping.id || 'id'],
+            name: row[locMapping.name || 'name'],
+            lat: +row[locMapping.lat || 'lat'],
+            lon: +row[locMapping.lon || 'lon'],
+          })),
+          flows: prepareFlows(dsvFormat(',').parse(project.flowData.csvContent, (row: any) => {
+            const mappedRow: any = { ...row };
+            if (flowMapping.origin) mappedRow.origin = row[flowMapping.origin];
+            if (flowMapping.dest) mappedRow.dest = row[flowMapping.dest];
+            if (flowMapping.count) mappedRow.count = +row[flowMapping.count];
+            if (flowMapping.time) mappedRow.time = row[flowMapping.time];
+            return mappedRow;
+          })),
+        };
+        setData(parsedData);
+      }
+    } catch (error) {
+      console.error('Failed to load project data', error);
+    }
+    setLoading(false);
+  };
+
+  const handleVisualize = (importedData: DataProps) => {
+    setData(importedData);
     router.push({
-      // Change the URL so that users can go back to data editing
       query: {
-        hash: md5(JSON.stringify(data)),
+        hash: md5(JSON.stringify(importedData)),
       },
     });
   };
-  return data && hash ? (
+
+  if (loading || (projectId && !data)) return <Layout><div style={{ textAlign: 'center', padding: '100px' }}><Spinner /></div></Layout>;
+
+  return data && (hash || projectId) ? (
     <FlowMapContainer {...data} />
   ) : (
     <Layout>
-      <h1>In-browser flow map</h1>
-      <section>
+      <Header>
+        <h1>Interactive Flow Map Explorer</h1>
+        <p style={{ fontSize: '18px', opacity: 0.9 }}>
+          Visualize your origin-destination data directly in the browser.
+        </p>
+      </Header>
+      <section style={{ maxWidth: '800px', margin: '0 auto 30px', textAlign: 'center' }}>
         <p>
-          With this tool you can visualize OD-data as a flow map directly in your browser without
-          the need to upload it to Google Sheets. The data will remain in your browser and{' '}
-          <i>will not be uploaded anywhere</i>. Note that the visualization will be lost as soon as
-          you close the browser window with it. There will be no URL to come back to or to share
-          with other people.
+          Your data remains private and stays in your browser. No data is uploaded to any server.
+          Use the editor below to paste your CSV data or upload files.
         </p>
       </section>
-      <Container>
-        <H5>Locations CSV</H5>
-        <H5>Flows CSV</H5>
-        <TextArea
-          growVertically={false}
-          large={true}
-          intent={Intent.PRIMARY}
-          onChange={(event) => setLocationsCsv(event.target.value)}
-          value={locationsCsv}
-        />
-        <TextArea
-          growVertically={false}
-          large={true}
-          intent={Intent.PRIMARY}
-          onChange={(event) => setFlowsCsv(event.target.value)}
-          value={flowsCsv}
-        />
-      </Container>
-      <ButtonArea>
-        <Button icon={IconNames.CHART} large={true} onClick={handleVisualize}>
-          Visualize
-        </Button>
-      </ButtonArea>
+
+      <DataImport
+        onVisualize={handleVisualize}
+        initialLocations={initialLocations}
+        initialFlows={initialFlows}
+      />
     </Layout>
   );
 };

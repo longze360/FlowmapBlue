@@ -1,5 +1,5 @@
-import {createSelector, createSelectorCreator, defaultMemoize, ParametricSelector} from 'reselect';
-import {LocationFilterMode, MAX_ZOOM_LEVEL, State} from './FlowMap.state';
+import { createSelector, createSelectorCreator, defaultMemoize, ParametricSelector } from 'reselect';
+import { LocationFilterMode, MAX_ZOOM_LEVEL, State } from './FlowMap.state';
 import {
   Config,
   ConfigPropName,
@@ -16,21 +16,22 @@ import {
   LocationTotals,
 } from './types';
 import * as Cluster from '@flowmap.gl/cluster';
-import {ClusterNode, findAppropriateZoomLevel, isCluster} from '@flowmap.gl/cluster';
+import { ClusterNode, findAppropriateZoomLevel, isCluster } from '@flowmap.gl/cluster';
 import getColors from './colors';
 import {
   DEFAULT_MAP_STYLE_DARK,
   DEFAULT_MAP_STYLE_LIGHT,
+  DEFAULT_MAP_STYLE_OSM,
   DEFAULT_MAPBOX_ACCESS_TOKEN,
   parseBoolConfigProp,
 } from './config';
-import {nest} from 'd3-collection';
-import {Props} from './FlowMap';
-import {bounds} from '@mapbox/geo-viewport';
+import { nest } from 'd3-collection';
+import { Props } from './FlowMap';
+import { bounds } from '@mapbox/geo-viewport';
 import KDBush from 'kdbush';
-import {descending, min} from 'd3-array';
-import {csvParseRows} from 'd3-dsv';
-import {getTimeGranularityByOrder, getTimeGranularityForDate, TimeGranularity} from './time';
+import { descending, min } from 'd3-array';
+import { csvParseRows } from 'd3-dsv';
+import { getTimeGranularityByOrder, getTimeGranularityForDate, TimeGranularity } from './time';
 
 export const NUMBER_OF_FLOWS_TO_DISPLAY = 500000;
 
@@ -102,7 +103,7 @@ const getActualTimeExtent: Selector<[Date, Date] | undefined> = createSelector(
     if (!flows) return undefined;
     let start = null;
     let end = null;
-    for (const {time} of flows) {
+    for (const { time } of flows) {
       if (time) {
         if (start == null || start > time) start = time;
         if (end == null || end < time) end = time;
@@ -130,7 +131,7 @@ export const getTimeExtent: Selector<[Date, Date] | undefined> = createSelector(
   getTimeGranularity,
   (timeExtent, timeGranularity) => {
     if (!timeExtent || !timeGranularity?.interval) return undefined;
-    const {interval} = timeGranularity;
+    const { interval } = timeGranularity;
     return [timeExtent[0], interval.offset(interval.floor(timeExtent[1]), 1)];
   },
 );
@@ -183,7 +184,7 @@ export const getClusterIndex: Selector<Cluster.ClusterIndex | undefined> = creat
     });
     const clusterLevels = Cluster.clusterLocations(
       locations,
-      {getLocationId, getLocationCentroid},
+      { getLocationId, getLocationCentroid },
       getLocationWeight,
       {
         maxZoom: MAX_ZOOM_LEVEL,
@@ -211,9 +212,8 @@ export const getClusterIndex: Selector<Cluster.ClusterIndex | undefined> = creat
             !m || getLocationWeight(d) > getLocationWeight(m) ? d : m,
           );
           const otherId = leaves.length === 2 && leaves.find((id) => id !== topId);
-          node.name = `"${getName(topId)}" and ${
-            otherId ? `"${getName(otherId)}"` : `${leaves.length - 1} others`
-          }`;
+          node.name = `"${getName(topId)}" and ${otherId ? `"${getName(otherId)}"` : `${leaves.length - 1} others`
+            }`;
         } else {
           (node as any).name = getName(node.id);
         }
@@ -344,15 +344,19 @@ export const getFlowMapColors = createSelector(
 );
 
 export const getMapboxMapStyle = createSelector(getConfig, getDarkMode, (config, darkMode) => {
-  const configMapStyle = config[ConfigPropName.MAPBOX_MAP_STYLE];
+  const configMapStyle = config[ConfigPropName.MAPBOX_MAP_STYLE] || config[ConfigPropName.MAP_STYLE];
   if (configMapStyle) {
     return configMapStyle;
   }
   const accessToken = config[ConfigPropName.MAPBOX_ACCESS_TOKEN];
-  if (accessToken !== DEFAULT_MAPBOX_ACCESS_TOKEN) {
+  if (accessToken && accessToken !== DEFAULT_MAPBOX_ACCESS_TOKEN) {
     return darkMode ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
   } else {
-    return darkMode ? DEFAULT_MAP_STYLE_DARK : DEFAULT_MAP_STYLE_LIGHT;
+    if (darkMode) {
+      return DEFAULT_MAP_STYLE_DARK || DEFAULT_MAP_STYLE_OSM;
+    } else {
+      return DEFAULT_MAP_STYLE_LIGHT || DEFAULT_MAP_STYLE_OSM;
+    }
   }
 });
 
@@ -398,8 +402,8 @@ function aggregateFlows(flows: Flow[]) {
     })
     .entries(flows);
   const rv: Flow[] = [];
-  for (const {values} of byOriginDest) {
-    for (const {value} of values) {
+  for (const { values } of byOriginDest) {
+    for (const { value } of values) {
       rv.push(value);
     }
   }
@@ -552,7 +556,7 @@ export const getLocationTotals: Selector<Map<string, LocationTotals> | undefined
     if (!flows) return undefined;
     const totals = new Map<string, LocationTotals>();
     const add = (id: string, d: Partial<LocationTotals>): LocationTotals => {
-      const rv = totals.get(id) ?? {incoming: 0, outgoing: 0, within: 0};
+      const rv = totals.get(id) ?? { incoming: 0, outgoing: 0, within: 0 };
       if (d.incoming != null) rv.incoming += d.incoming;
       if (d.outgoing != null) rv.outgoing += d.outgoing;
       if (d.within != null) rv.within += d.within;
@@ -564,10 +568,10 @@ export const getLocationTotals: Selector<Map<string, LocationTotals> | undefined
         const destId = getFlowDestId(f);
         const count = getFlowMagnitude(f);
         if (originId === destId) {
-          totals.set(originId, add(originId, {within: count}));
+          totals.set(originId, add(originId, { within: count }));
         } else {
-          totals.set(originId, add(originId, {outgoing: count}));
-          totals.set(destId, add(destId, {incoming: count}));
+          totals.set(originId, add(originId, { outgoing: count }));
+          totals.set(destId, add(destId, { incoming: count }));
         }
       }
     }
@@ -670,7 +674,7 @@ function isFlowInSelection(
   selectedLocationsSet: Set<string> | undefined,
   locationFilterMode: LocationFilterMode,
 ) {
-  const {origin, dest} = flow;
+  const { origin, dest } = flow;
   if (selectedLocationsSet) {
     switch (locationFilterMode) {
       case LocationFilterMode.ALL:
@@ -716,7 +720,7 @@ function calcLocationTotalsExtent(
 ) {
   if (!locationTotals) return undefined;
   let rv: [number, number] | undefined = undefined;
-  for (const [id, {incoming, outgoing, within}] of locationTotals.entries()) {
+  for (const [id, { incoming, outgoing, within }] of locationTotals.entries()) {
     if (locationIdsInViewport == null || locationIdsInViewport.has(id)) {
       const lo = Math.min(incoming + within, outgoing + within, within);
       const hi = Math.max(incoming + within, outgoing + within, within);
@@ -761,7 +765,7 @@ export const getFlowsForFlowMapLayer: Selector<Flow[] | undefined> = createSelec
     const picked: Flow[] = [];
     let pickedCount = 0;
     for (const flow of flows) {
-      const {origin, dest} = flow;
+      const { origin, dest } = flow;
       if (locationIdsInViewport.has(origin) || locationIdsInViewport.has(dest)) {
         let pick = isFlowInSelection(flow, selectedLocationsSet, locationFilterMode);
         if (pick) {

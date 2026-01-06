@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  locationData LocationData?
+  flowData     FlowData?
+}
+
+model LocationData {
+  id         String   @id @default(cuid())
+  projectId  String   @unique
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  csvContent String
+  // Mapping from internal field names to CSV column names
+  // e.g., {"id": "city_id", "lat": "latitude", ...}
+  mapping    String   @default("{}")
+}
+
+model FlowData {
+  id         String   @id @default(cuid())
+  projectId  String   @unique
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  csvContent String
+  // Mapping from internal field names to CSV column names
+  // e.g., {"origin": "from", "dest": "to", ...}
+  mapping    String   @default("{}")
+}

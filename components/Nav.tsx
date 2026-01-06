@@ -1,11 +1,11 @@
-import React, {ReactNode, useState} from 'react';
-import {Classes, Icon} from '@blueprintjs/core';
-import {Away} from '../core';
+import React, { ReactNode, useState } from 'react';
+import { Classes, Icon } from '@blueprintjs/core';
+import { Away } from '../core';
 import GitHubLogo from '../public/images/github.svg';
 import styled from '@emotion/styled';
 import Link from 'next/link';
 import Image from 'next/image';
-import {IconNames} from '@blueprintjs/icons';
+import { IconNames } from '@blueprintjs/icons';
 import Logo from '../core/Logo';
 
 const BG_COLOR = 'rgb(38, 50, 71)';
@@ -95,7 +95,7 @@ const LinkItem = styled.div`
   }
 `;
 
-const NavItem = ({to, children}: {to: string; children: ReactNode}) => (
+const NavItem = ({ to, children }: { to: string; children: ReactNode }) => (
   <Link
     // activeClassName={Classes.ACTIVE}
     // isActive={(match, location) => {
@@ -130,6 +130,7 @@ const Nav = () => {
   const navLinks = (
     <>
       <NavItem to="/">Home</NavItem>
+      <NavItem to="/projects">Studio</NavItem>
       <NavItem to="/gallery">Gallery</NavItem>
       <NavItem to="/news">News</NavItem>
       <NavItem to="/how-to-make-a-flow-map">How to make a flow map</NavItem>

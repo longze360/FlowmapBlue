@@ -1,5 +1,5 @@
-import {DeckGL} from '@deck.gl/react';
-import {MapController, MapView} from '@deck.gl/core';
+import { DeckGL } from '@deck.gl/react';
+import { MapController, MapView } from '@deck.gl/core';
 import * as React from 'react';
 import {
   ReactNode,
@@ -11,8 +11,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import {alea} from 'seedrandom';
-import {Map as ReactMapGl} from 'react-map-gl';
+import { alea } from 'seedrandom';
+import { Map as ReactMapGl } from 'react-map-gl';
+import * as maplibregl from 'maplibre-gl';
 import FlowMapLayer, {
   FlowLayerPickingInfo,
   FlowPickingInfo,
@@ -30,7 +31,7 @@ import {
   Icon,
   Position,
 } from '@blueprintjs/core';
-import {getViewStateForLocations, LocationTotalsLegend} from '@flowmap.gl/react';
+import { getViewStateForLocations, LocationTotalsLegend } from '@flowmap.gl/react';
 import WebMercatorViewport from '@math.gl/web-mercator';
 import {
   Absolute,
@@ -44,10 +45,10 @@ import {
   TitleBox,
   ToastContent,
 } from './Boxes';
-import {FlowTooltipContent, formatCount, LocationTooltipContent} from './TooltipContent';
-import Tooltip, {TargetBounds} from './Tooltip';
+import { FlowTooltipContent, formatCount, LocationTooltipContent } from './TooltipContent';
+import Tooltip, { TargetBounds } from './Tooltip';
 import Link from 'next/link';
-import Collapsible, {Direction} from './Collapsible';
+import Collapsible, { Direction } from './Collapsible';
 import isDeepEqual from 'fast-deep-equal';
 import {
   AsyncState,
@@ -66,7 +67,7 @@ import Message from './Message';
 import LoadingSpinner from './LoadingSpinner';
 import NoScrollContainer from './NoScrollContainer';
 import styled from '@emotion/styled';
-import {IconNames} from '@blueprintjs/icons';
+import { IconNames } from '@blueprintjs/icons';
 import LocationsSearchBox from './LocationSearchBox';
 import Away from './Away';
 import {
@@ -124,12 +125,12 @@ import SettingsPopover from './SettingsPopover';
 import getBbox from '@turf/bbox';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import Timeline from './Timeline';
-import {TimeGranularity} from './time';
-import {findAppropriateZoomLevel} from '@flowmap.gl/cluster';
-import {useRouter} from 'next/router';
-import {SPREADSHEET_KEY_RE, getFlowsSheetKey, makeGSheetsMapUrl} from '../components/constants';
-import {useMeasure} from 'react-use';
-import {DEFAULT_MAPBOX_ACCESS_TOKEN} from './config';
+import { TimeGranularity } from './time';
+import { findAppropriateZoomLevel } from '@flowmap.gl/cluster';
+import { useRouter } from 'next/router';
+import { SPREADSHEET_KEY_RE, getFlowsSheetKey, makeGSheetsMapUrl } from '../components/constants';
+import { useMeasure } from 'react-use';
+import { DEFAULT_MAPBOX_ACCESS_TOKEN } from './config';
 
 const CONTROLLER_OPTIONS = {
   type: MapController,
@@ -157,7 +158,7 @@ const DeckGLOuter = styled.div<{
   baseMapOpacity: number;
   cursor: 'crosshair' | 'pointer' | undefined;
 }>(
-  ({cursor, baseMapOpacity, darkMode}) => `
+  ({ cursor, baseMapOpacity, darkMode }) => `
   & #deckgl-overlay {
     mix-blend-mode: ${darkMode ? 'screen' : 'multiply'};
   }
@@ -175,7 +176,7 @@ export const ErrorsLocationsBlock = styled.div`
   overflow: auto;
 `;
 
-const SelectedTimeRangeBox = styled(BoxStyle)<{darkMode: boolean}>((props) => ({
+const SelectedTimeRangeBox = styled(BoxStyle)<{ darkMode: boolean }>((props) => ({
   display: 'flex',
   alignSelf: 'center',
   fontSize: 12,
@@ -192,14 +193,14 @@ const TimelineBox = styled(BoxStyle)({
   borderTop: '1px solid #999',
 });
 
-const TotalCount = styled.div<{darkMode: boolean}>((props) => ({
+const TotalCount = styled.div<{ darkMode: boolean }>((props) => ({
   padding: 5,
   borderRadius: 5,
   backgroundColor: props.darkMode ? Colors.DARK_GRAY4 : Colors.LIGHT_GRAY4,
   textAlign: 'center',
 }));
 
-const FlowmapCityLinkArea = styled.div<{darkMode: boolean}>(
+const FlowmapCityLinkArea = styled.div<{ darkMode: boolean }>(
   (props) => `
   display: flex;
   justify-content: center;
@@ -207,7 +208,7 @@ const FlowmapCityLinkArea = styled.div<{darkMode: boolean}>(
 `,
 );
 
-const FlowmapCityPopoverContent = styled.div<{darkMode: boolean}>(
+const FlowmapCityPopoverContent = styled.div<{ darkMode: boolean }>(
   (props) => `
   font-size: 12px;
   max-width: 260px;
@@ -222,7 +223,7 @@ const FlowmapCityPopoverContent = styled.div<{darkMode: boolean}>(
 );
 export const MAX_NUM_OF_IDS_IN_ERROR = 100;
 
-const StyledFlowmapCityLink = styled.a<{darkMode: boolean}>(
+const StyledFlowmapCityLink = styled.a<{ darkMode: boolean }>(
   (props) => `
   color: ${props.darkMode ? Colors.BLUE5 : Colors.BLUE3};
   font-size: 12px;
@@ -246,7 +247,7 @@ function getFlowmapCityUrl() {
   }
 }
 
-const FlowmapCityLink: React.FC<{darkMode: boolean; children: ReactNode}> = ({
+const FlowmapCityLink: React.FC<{ darkMode: boolean; children: ReactNode }> = ({
   darkMode,
   children,
 }) => (
@@ -262,7 +263,7 @@ const FlowmapCityLink: React.FC<{darkMode: boolean; children: ReactNode}> = ({
 );
 
 const FlowMap: React.FC<Props> = (props) => {
-  const {inBrowser, embed, config, spreadSheetKey, flowsSheet, locationsFetch, flowsFetch} = props;
+  const { inBrowser, embed, config, spreadSheetKey, flowsSheet, locationsFetch, flowsFetch } = props;
   const deckRef = useRef<any>();
   const router = useRouter();
   const initialState = useMemo<State>(() => getInitialState(config, router.query), [config]);
@@ -271,7 +272,7 @@ const FlowMap: React.FC<Props> = (props) => {
 
   const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, initialState);
   const [mapDrawingEnabled, setMapDrawingEnabled] = useState(false);
-  const {selectedTimeRange} = state;
+  const { selectedTimeRange } = state;
 
   const timeGranularity = getTimeGranularity(state, props);
   const timeExtent = getTimeExtent(state, props);
@@ -301,8 +302,8 @@ const FlowMap: React.FC<Props> = (props) => {
       const queryParams = stateToQueryParams(state);
       const query = {
         ...queryParams,
-        ...(spreadSheetKey ? {id: spreadSheetKey} : {}),
-        ...(flowsSheet ? {sheet: getFlowsSheetKey(flowsSheet)} : {}),
+        ...(spreadSheetKey ? { id: spreadSheetKey } : {}),
+        ...(flowsSheet ? { sheet: getFlowsSheetKey(flowsSheet) } : {}),
       };
       if (!isDeepEqual(query, router.query)) {
         router.replace(makeGSheetsMapUrl(spreadSheetKey, flowsSheet, embed, queryParams));
@@ -313,7 +314,7 @@ const FlowMap: React.FC<Props> = (props) => {
   );
   useEffect(updateQuerySearch, [router.asPath, state]);
 
-  const {viewport, tooltip, animationEnabled, baseMapEnabled} = state;
+  const { viewport, tooltip, animationEnabled, baseMapEnabled } = state;
   const allFlows = getFetchedFlows(state, props);
   const allLocations = getLocations(state, props);
   const locationsHavingFlows = getLocationsHavingFlows(state, props);
@@ -438,7 +439,7 @@ const FlowMap: React.FC<Props> = (props) => {
             </ErrorsLocationsBlock>
             {formatCount(allFlows.length - flowsForKnownLocations.length)} flows were omitted.
             {flowsForKnownLocations.length === 0 && (
-              <div style={{marginTop: '1em'}}>
+              <div style={{ marginTop: '1em' }}>
                 Make sure the columns are named header row in the flows sheet is correct. There must
                 be <b>origin</b>, <b>dest</b>, and <b>count</b>.
               </div>
@@ -449,7 +450,7 @@ const FlowMap: React.FC<Props> = (props) => {
     }
   }, [unknownLocations, showErrorToast, allFlows, flowsForKnownLocations]);
 
-  const {adjustViewportToLocations} = state;
+  const { adjustViewportToLocations } = state;
 
   useEffect(() => {
     if (!adjustViewportToLocations) {
@@ -463,7 +464,7 @@ const FlowMap: React.FC<Props> = (props) => {
         locationsHavingFlows ?? allLocations,
         getLocationCentroid,
         [width, height],
-        {pad: 0.1},
+        { pad: 0.1 },
       );
 
       if (!draft.zoom) {
@@ -498,7 +499,7 @@ const FlowMap: React.FC<Props> = (props) => {
   const handleChangeClusteringAuto = (value: boolean) => {
     if (!value) {
       if (clusterIndex) {
-        const {availableZoomLevels} = clusterIndex;
+        const { availableZoomLevels } = clusterIndex;
         if (availableZoomLevels != null) {
           dispatch({
             type: ActionType.SET_MANUAL_CLUSTER_ZOOM,
@@ -537,7 +538,7 @@ const FlowMap: React.FC<Props> = (props) => {
   const getMercator = useCallback(() => {
     const containerBounds = getContainerClientRect();
     if (!containerBounds) return undefined;
-    const {width, height} = containerBounds;
+    const { width, height } = containerBounds;
     return new WebMercatorViewport({
       ...viewport,
       width,
@@ -548,7 +549,7 @@ const FlowMap: React.FC<Props> = (props) => {
   const showTooltip = (bounds: TargetBounds, content: React.ReactNode) => {
     const containerBounds = getContainerClientRect();
     if (!containerBounds) return;
-    const {top, left} = containerBounds;
+    const { top, left } = containerBounds;
     dispatch({
       type: ActionType.SET_TOOLTIP,
       tooltip: {
@@ -564,7 +565,7 @@ const FlowMap: React.FC<Props> = (props) => {
   };
 
   const highlight = (highlight: Highlight | undefined) => {
-    dispatch({type: ActionType.SET_HIGHLIGHT, highlight});
+    dispatch({ type: ActionType.SET_HIGHLIGHT, highlight });
   };
   const [showTooltipDebounced, cancelShowTooltipDebounced] = useDebounced(showTooltip, 500);
   const [highlightDebounced, cancelHighlightDebounced] = useDebounced(highlight, 500);
@@ -603,12 +604,12 @@ const FlowMap: React.FC<Props> = (props) => {
   };
 
   const showLocationTooltip = (info: LocationPickingInfo) => {
-    const {object: location, circleRadius} = info;
+    const { object: location, circleRadius } = info;
     const mercator = getMercator();
     if (!mercator) return;
     const [x, y] = mercator.project(getLocationCentroid(location));
     const r = circleRadius + 5;
-    const {selectedLocations} = state;
+    const { selectedLocations } = state;
     const bounds = {
       left: x - r,
       top: y - r,
@@ -634,7 +635,7 @@ const FlowMap: React.FC<Props> = (props) => {
   };
 
   const handleHover = (info: FlowLayerPickingInfo) => {
-    const {type, object, x, y} = info;
+    const { type, object, x, y } = info;
     switch (type) {
       case PickingType.FLOW: {
         if (object) {
@@ -719,7 +720,7 @@ const FlowMap: React.FC<Props> = (props) => {
   const mapboxMapStyle = getMapboxMapStyle(state, props);
 
   const getHighlightForZoom = () => {
-    const {highlight, clusteringEnabled} = state;
+    const { highlight, clusteringEnabled } = state;
     if (!highlight || !clusteringEnabled) {
       return highlight;
     }
@@ -744,12 +745,12 @@ const FlowMap: React.FC<Props> = (props) => {
 
     switch (highlight.type) {
       case HighlightType.LOCATION:
-        const {locationId} = highlight;
+        const { locationId } = highlight;
         return isValidForClusterZoom(locationId) ? highlight : undefined;
 
       case HighlightType.FLOW:
         const {
-          flow: {origin, dest},
+          flow: { origin, dest },
         } = highlight;
         if (isValidForClusterZoom(origin) && isValidForClusterZoom(dest)) {
           return highlight;
@@ -760,12 +761,12 @@ const FlowMap: React.FC<Props> = (props) => {
     return undefined;
   };
 
-  const handleClick = (info: FlowLayerPickingInfo, event: {srcEvent: MouseEvent}) => {
+  const handleClick = (info: FlowLayerPickingInfo, event: { srcEvent: MouseEvent }) => {
     switch (info.type) {
       case PickingType.LOCATION:
       // fall through
       case PickingType.LOCATION_AREA: {
-        const {object} = info;
+        const { object } = info;
         if (object) {
           dispatch({
             type: ActionType.SELECT_LOCATION,
@@ -792,7 +793,7 @@ const FlowMap: React.FC<Props> = (props) => {
     });
   };
 
-  const handleViewStateChange = ({viewState}: {viewState: ViewportProps}) => {
+  const handleViewStateChange = ({ viewState }: { viewState: ViewportProps }) => {
     dispatch({
       type: ActionType.SET_VIEWPORT,
       viewport: viewState,
@@ -844,20 +845,20 @@ const FlowMap: React.FC<Props> = (props) => {
   // };
 
   const handleZoomIn = () => {
-    dispatch({type: ActionType.ZOOM_IN});
+    dispatch({ type: ActionType.ZOOM_IN });
   };
 
   const handleZoomOut = () => {
-    dispatch({type: ActionType.ZOOM_OUT});
+    dispatch({ type: ActionType.ZOOM_OUT });
   };
 
   const handleResetBearingPitch = () => {
-    dispatch({type: ActionType.RESET_BEARING_PITCH});
+    dispatch({ type: ActionType.RESET_BEARING_PITCH });
   };
 
   const handleSelectFlowsSheet: React.ChangeEventHandler<HTMLSelectElement> = (event) => {
     const sheet = event.currentTarget.value;
-    const {onSetFlowsSheet} = props;
+    const { onSetFlowsSheet } = props;
     if (onSetFlowsSheet) {
       onSetFlowsSheet(sheet);
       handleChangeSelectLocations(undefined);
@@ -953,7 +954,7 @@ const FlowMap: React.FC<Props> = (props) => {
     return layers;
   };
 
-  const {width, height} = getContainerClientRect() ?? {};
+  const { width, height } = getContainerClientRect() ?? {};
   return (
     <NoScrollContainer
       ref={outerRef}
@@ -976,16 +977,19 @@ const FlowMap: React.FC<Props> = (props) => {
             width, // passing dimensions prevents half blank map on resize
             height,
           }}
-          views={[new MapView({id: 'map', repeat: true})]}
+          views={[new MapView({ id: 'map', repeat: true })]}
           onViewStateChange={handleViewStateChange}
           layers={getLayers()}
-          parameters={{clearColor: darkMode ? [0, 0, 0, 1] : [255, 255, 255, 1]}}
+          parameters={{ clearColor: darkMode ? [0, 0, 0, 1] : [255, 255, 255, 1] }}
         >
-          {mapboxAccessToken && baseMapEnabled && (
+          {baseMapEnabled && (
             <ReactMapGl
-              mapboxAccessToken={mapboxAccessToken}
+              mapLib={Object.assign({}, maplibregl, {
+                supported: (maplibregl as any).supported || (() => true),
+              })}
+              mapboxAccessToken={mapboxAccessToken || ''}
               mapStyle={mapboxMapStyle}
-              style={{width: '100%', height: '100%'}}
+              style={{ width: '100%', height: '100%' }}
             />
           )}
           {/* {mapDrawingEnabled && (
@@ -1154,12 +1158,12 @@ const FlowMap: React.FC<Props> = (props) => {
                 <TotalCount darkMode={darkMode}>
                   {Math.round(totalFilteredCount) === Math.round(totalUnfilteredCount)
                     ? config['msg.totalCount.allTrips']?.replace(
-                        '{0}',
-                        formatCount(totalUnfilteredCount),
-                      )
+                      '{0}',
+                      formatCount(totalUnfilteredCount),
+                    )
                     : config['msg.totalCount.countOfTrips']
-                        ?.replace('{0}', formatCount(totalFilteredCount))
-                        .replace('{1}', formatCount(totalUnfilteredCount))}
+                      ?.replace('{0}', formatCount(totalFilteredCount))
+                      .replace('{1}', formatCount(totalUnfilteredCount))}
                 </TotalCount>
               )}
               <FlowmapCityLinkArea darkMode={darkMode}>
@@ -1168,7 +1172,7 @@ const FlowMap: React.FC<Props> = (props) => {
                   interactionKind="hover"
                   position={Position.BOTTOM}
                   minimal
-                  modifiers={{offset: {offset: '0, 8'}}}
+                  modifiers={{ offset: { offset: '0, 8' } }}
                   content={
                     <FlowmapCityPopoverContent darkMode={darkMode}>
                       {`Flowmap City is the new product we are building. It offers 
@@ -1193,12 +1197,12 @@ const FlowMap: React.FC<Props> = (props) => {
                 >
                   <Row spacing={10}>
                     <FlowmapCityLink darkMode={darkMode}>
-                      <Row spacing={5} style={{display: 'inline-block'}}>
+                      <Row spacing={5} style={{ display: 'inline-block' }}>
                         <Icon
                           color={Colors.BLUE5}
                           icon={IconNames.SHARE}
                           size={12}
-                          style={{height: 14}}
+                          style={{ height: 14 }}
                         />
                         <span>Open in Flowmap City</span>
                       </Row>
@@ -1243,7 +1247,7 @@ function selectedTimeRangeToString(
   selectedTimeRange: [Date, Date],
   timeGranularity: TimeGranularity,
 ) {
-  const {interval, formatFull, order} = timeGranularity;
+  const { interval, formatFull, order } = timeGranularity;
   const start = selectedTimeRange[0];
   let end = selectedTimeRange[1];
   if (order >= 3) {

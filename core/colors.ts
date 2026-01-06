@@ -1,4 +1,4 @@
-import type {Colors, DiffColors} from '@flowmap.gl/core';
+import type { Colors, DiffColors } from '@flowmap.gl/core';
 import {
   interpolateCool,
   interpolateInferno,
@@ -25,11 +25,11 @@ import {
   schemeYlOrBr,
   schemeYlOrRd,
 } from 'd3-scale-chromatic';
-import {range} from 'd3-array';
-import {scalePow, scaleSequential} from 'd3-scale';
-import {interpolateRgbBasis} from 'd3-interpolate';
-import {Config} from './types';
-import {color as d3color, hcl} from 'd3-color';
+import { range } from 'd3-array';
+import { scalePow, scaleSequential } from 'd3-scale';
+import { interpolateRgbBasis } from 'd3-interpolate';
+import { Config } from './types';
+import { color as d3color, hcl } from 'd3-color';
 
 const asScheme = (scheme: ReadonlyArray<ReadonlyArray<string>>) =>
   scheme[scheme.length - 1] as string[];
@@ -38,8 +38,9 @@ export enum ColorScheme {
   primary = '#137CBD',
 }
 
-const FLOW_MIN_COLOR = 'rgba(240,240,240,0.5)';
-export const DEFAULT_COLOR_SCHEME = [FLOW_MIN_COLOR, ColorScheme.primary];
+// Updated FLOW_MIN_COLOR to be more visible on light basemaps
+const FLOW_MIN_COLOR = 'rgba(180,217,217,0.7)';
+export const DEFAULT_COLOR_SCHEME = [FLOW_MIN_COLOR, '#2a5674']; // Teal gradient for better contrast on OSM
 
 const SCALE_NUM_STEPS = 20;
 const getColorSteps = (interpolate: (x: number) => string) =>
@@ -47,7 +48,7 @@ const getColorSteps = (interpolate: (x: number) => string) =>
     .map((i) => interpolate(i / SCALE_NUM_STEPS))
     .reverse();
 
-export const COLOR_SCHEMES: {[key: string]: string[]} = {
+export const COLOR_SCHEMES: { [key: string]: string[] } = {
   Default: DEFAULT_COLOR_SCHEME,
   // https://carto.com/carto-colors/
   Blues: asScheme(schemeBlues),
@@ -166,8 +167,14 @@ export default function getColors(
           const alpha = amount(i);
           if (color == null || alpha == null) return '#000';
           const col = hcl(color);
-          col.l = darkMode ? col.l - col.l * alpha : col.l + (100 - col.l) * alpha;
-          col.c = col.c - col.c * (alpha / 4);
+          // In dark mode, fade towards black; in light mode, keep colors bold
+          if (darkMode) {
+            col.l = col.l - col.l * alpha;
+          } else {
+            // For light mode: very minimal fade to keep flows visible on light backgrounds
+            col.l = Math.min(col.l + (100 - col.l) * alpha * 0.05, 65); // Minimal lightness increase
+            col.c = Math.max(col.c - col.c * (alpha * 0.15), col.c * 0.7); // Maintain strong saturation
+          }
           return col.toString();
         },
         // interpolateRgbBasis([colorScale(i), darkMode ? '#000' : '#fff'])(amount(i))
