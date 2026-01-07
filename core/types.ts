@@ -86,6 +86,12 @@ export interface ViewportProps {
   transitionInterpolator?: any;
   transitionInterruption?: any;
   transitionEasing?: any;
+  padding?: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
 }
 
 export declare type AsyncState<T> =

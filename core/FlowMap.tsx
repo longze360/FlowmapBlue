@@ -984,7 +984,8 @@ const FlowMap: React.FC<Props> = (props) => {
         >
           {baseMapEnabled && (
             <ReactMapGl
-              viewState={viewport}
+              id="map"
+              viewState={viewport as any}
               mapLib={Object.assign({}, maplibregl, {
                 supported: (maplibregl as any).supported || (() => true),
               })}
