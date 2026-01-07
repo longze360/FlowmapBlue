@@ -7,7 +7,7 @@ export const DEFAULT_MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MapboxAccessT
 export const DEFAULT_CONFIG: Config = {
   [ConfigPropName.MAPBOX_ACCESS_TOKEN]: DEFAULT_MAPBOX_ACCESS_TOKEN,
   [ConfigPropName.MAP_STYLE]: DEFAULT_MAP_STYLE_OSM,
-  [ConfigPropName.COLORS_DARK_MODE]: 'false', // Default to light mode for OSM basemap
+  [ConfigPropName.COLORS_DARK_MODE]: 'no', // Default to light mode for OSM basemap
   'msg.locationTooltip.incoming': 'Incoming trips',
   'msg.locationTooltip.outgoing': 'Outgoing trips',
   'msg.locationTooltip.internal': 'Internal & round trips',

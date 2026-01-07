@@ -215,7 +215,7 @@ function mainReducer(state: State, action: Action): State {
         ...state,
         viewport: {
           ...viewport,
-          zoom: Math.min(MAX_ZOOM_LEVEL, viewport.zoom * 1.1),
+          zoom: Math.min(MAX_ZOOM_LEVEL, viewport.zoom + 0.5),
         },
         tooltip: undefined,
         highlight: undefined,
@@ -227,7 +227,7 @@ function mainReducer(state: State, action: Action): State {
         ...state,
         viewport: {
           ...viewport,
-          zoom: Math.max(MIN_ZOOM_LEVEL, viewport.zoom / 1.1),
+          zoom: Math.max(MIN_ZOOM_LEVEL, viewport.zoom - 0.5),
         },
         tooltip: undefined,
         highlight: undefined,

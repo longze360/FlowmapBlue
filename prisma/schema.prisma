@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Project {
-  id           String        @id @default(cuid())
-  name         String
-  description  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  locationData LocationData?
-  flowData     FlowData?
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  locationData   LocationData?
+  flowData       FlowData?
+  propertiesData PropertiesData?
 }
 
 model LocationData {
@@ -35,4 +36,13 @@ model FlowData {
   // Mapping from internal field names to CSV column names
   // e.g., {"origin": "from", "dest": "to", ...}
   mapping    String   @default("{}")
+}
+
+model PropertiesData {
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // JSON string storing all config properties
+  // e.g., {"colors.scheme": "Sunset", "colors.darkMode": "yes", ...}
+  config    String  @default("{}")
 }

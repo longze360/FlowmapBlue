@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { Button, H1, H5, Card, Intent, FileInput, Spinner, Breadcrumbs, IBreadcrumbProps, Icon } from '@blueprintjs/core';
 import { IconNames } from '@blueprintjs/icons';
 import SchemaMapper from '../../components/SchemaMapper';
+import ProjectPropertiesEditor from '../../components/ProjectPropertiesEditor';
 
 const ProjectDetailPage = () => {
     const router = useRouter();
@@ -18,6 +19,8 @@ const ProjectDetailPage = () => {
 
     const [flowCsv, setFlowCsv] = useState('');
     const [flowMapping, setFlowMapping] = useState<Record<string, string>>({});
+
+    const [propertiesConfig, setPropertiesConfig] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (id) {
@@ -38,6 +41,9 @@ const ProjectDetailPage = () => {
             if (data.flowData) {
                 setFlowCsv(data.flowData.csvContent);
                 setFlowMapping(JSON.parse(data.flowData.mapping));
+            }
+            if (data.propertiesData) {
+                setPropertiesConfig(JSON.parse(data.propertiesData.config));
             }
         } catch (error) {
             console.error('Failed to fetch project', error);
@@ -67,6 +73,7 @@ const ProjectDetailPage = () => {
                 body: JSON.stringify({
                     locationData: locationCsv ? { csvContent: locationCsv, mapping: locationMapping } : null,
                     flowData: flowCsv ? { csvContent: flowCsv, mapping: flowMapping } : null,
+                    propertiesData: { config: propertiesConfig },
                 }),
             });
             alert('Project saved successfully!');
@@ -87,6 +94,7 @@ const ProjectDetailPage = () => {
     ];
 
     if (loading) return <ClientSide><Layout><div style={{ textAlign: 'center', padding: '100px' }}><Spinner /></div></Layout></ClientSide>;
+    if (!project) return <ClientSide><Layout><div style={{ textAlign: 'center', padding: '100px' }}><Spinner /></div></Layout></ClientSide>;
 
     return (
         <ClientSide>
@@ -106,7 +114,8 @@ const ProjectDetailPage = () => {
                                 intent={Intent.SUCCESS}
                                 large={true}
                                 onClick={handleVisualize}
-                                disabled={!locationCsv || !flowCsv}
+                                disabled={!locationCsv || !flowCsv || !propertiesConfig || Object.keys(propertiesConfig).length === 0}
+                                title={!propertiesConfig || Object.keys(propertiesConfig).length === 0 ? 'Please configure and save properties first' : ''}
                             >
                                 Visualize Flow Map
                             </Button>
@@ -154,6 +163,19 @@ const ProjectDetailPage = () => {
                                     <FileInput text="Upload Flows CSV" onInputChange={handleFileUpload('flow')} />
                                 </Card>
                             )}
+                        </section>
+
+                        <section>
+                            <div style={{ marginTop: '30px' }}>
+                                <H5>3. Properties Settings</H5>
+                                <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '10px' }}>
+                                    Configure visualization settings. You must save properties before visualizing.
+                                </p>
+                                <ProjectPropertiesEditor
+                                    initialConfig={propertiesConfig}
+                                    onConfigChange={setPropertiesConfig}
+                                />
+                            </div>
                         </section>
                     </div>
                 </div>

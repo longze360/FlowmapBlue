@@ -10,20 +10,23 @@ import { dsvFormat } from 'd3-dsv';
 import { prepareFlows } from '../core';
 import { Spinner } from '@blueprintjs/core';
 
+import { Config } from '../core/types';
+
 interface DataProps {
   locations: Location[];
   flows: Flow[];
+  config?: Config;
 }
 
 const FlowMapContainer = (props: DataProps) => {
-  const { flows, locations } = props;
+  const { flows, locations, config } = props;
   return (
     <MapContainer>
       <FlowMap
         inBrowser={true}
         flowsFetch={PromiseState.resolve(flows)}
         locationsFetch={PromiseState.resolve(locations)}
-        config={DEFAULT_CONFIG}
+        config={config || DEFAULT_CONFIG}
         spreadSheetKey={undefined}
         flowsSheet={undefined}
       />
@@ -73,6 +76,13 @@ const InBrowserFlowMap = () => {
         const locMapping = JSON.parse(project.locationData.mapping);
         const flowMapping = JSON.parse(project.flowData.mapping);
 
+        // Parse properties config if available
+        let projectConfig: Config = DEFAULT_CONFIG;
+        if (project.propertiesData && project.propertiesData.config) {
+          const parsedConfig = JSON.parse(project.propertiesData.config);
+          projectConfig = { ...DEFAULT_CONFIG, ...parsedConfig };
+        }
+
         const parsedData = {
           locations: dsvFormat(',').parse(project.locationData.csvContent, (row: any) => ({
             ...row,
@@ -86,9 +96,14 @@ const InBrowserFlowMap = () => {
             if (flowMapping.origin) mappedRow.origin = row[flowMapping.origin];
             if (flowMapping.dest) mappedRow.dest = row[flowMapping.dest];
             if (flowMapping.count) mappedRow.count = +row[flowMapping.count];
-            if (flowMapping.time) mappedRow.time = row[flowMapping.time];
+            if (flowMapping.time) {
+              const timeStr = row[flowMapping.time];
+              // Convert time string to Date object
+              mappedRow.time = timeStr ? new Date(timeStr) : undefined;
+            }
             return mappedRow;
           })),
+          config: projectConfig,
         };
         setData(parsedData);
       }

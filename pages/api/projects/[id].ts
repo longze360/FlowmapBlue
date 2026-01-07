@@ -10,11 +10,12 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
             include: {
                 locationData: true,
                 flowData: true,
+                propertiesData: true,
             },
         });
         res.json(project);
     } else if (req.method === 'PUT') {
-        const { name, description, locationData, flowData } = req.body;
+        const { name, description, locationData, flowData, propertiesData } = req.body;
 
         const project = await prisma.project.update({
             where: { id: projectId },
@@ -45,10 +46,21 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
                         }
                     }
                 } : undefined,
+                propertiesData: propertiesData ? {
+                    upsert: {
+                        create: {
+                            config: JSON.stringify(propertiesData.config || {})
+                        },
+                        update: {
+                            config: JSON.stringify(propertiesData.config || {})
+                        }
+                    }
+                } : undefined,
             },
             include: {
                 locationData: true,
                 flowData: true,
+                propertiesData: true,
             }
         });
         res.json(project);

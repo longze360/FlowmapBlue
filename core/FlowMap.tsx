@@ -972,7 +972,7 @@ const FlowMap: React.FC<Props> = (props) => {
         <DeckGL
           ref={deckRef}
           controller={CONTROLLER_OPTIONS}
-          initialViewState={{
+          viewState={{
             ...viewport,
             width, // passing dimensions prevents half blank map on resize
             height,
@@ -984,6 +984,7 @@ const FlowMap: React.FC<Props> = (props) => {
         >
           {baseMapEnabled && (
             <ReactMapGl
+              viewState={viewport}
               mapLib={Object.assign({}, maplibregl, {
                 supported: (maplibregl as any).supported || (() => true),
               })}
