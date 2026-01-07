@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from '@emotion/styled';
-import {TimeInterval} from 'd3-time';
-import {Colors} from '@blueprintjs/core';
+import { TimeInterval } from 'd3-time';
+import { Colors } from '@blueprintjs/core';
 
 interface Props {
   darkMode: boolean;
@@ -10,6 +10,7 @@ interface Props {
   interval: TimeInterval;
   stepDuration: number;
   speed: number;
+  isLooping: boolean;
   isPlaying: boolean;
   onPlay: () => void;
   onPause: () => void;
@@ -19,7 +20,7 @@ interface Props {
 const width = 40,
   height = 40;
 
-const OuterSvg = styled.svg<{darkMode: boolean}>((props) => ({
+const OuterSvg = styled.svg<{ darkMode: boolean }>((props) => ({
   cursor: 'pointer',
   '& > circle': {
     transition: 'fill 0.2s',
@@ -49,9 +50,9 @@ class PlayControl extends React.Component<Props> {
   }
 
   start = () => {
-    const {isPlaying, onPlay} = this.props;
+    const { isPlaying, onPlay } = this.props;
     if (!isPlaying) {
-      const {extent, current, onAdvance} = this.props;
+      const { extent, current, onAdvance } = this.props;
       onPlay();
       this.scheduleNextStep();
       if (current >= extent[1]) {
@@ -63,7 +64,7 @@ class PlayControl extends React.Component<Props> {
 
   stop = () => {
     this.clearPlayTimeOut();
-    const {isPlaying, onPause} = this.props;
+    const { isPlaying, onPause } = this.props;
     if (isPlaying) {
       onPause();
     }
@@ -78,19 +79,24 @@ class PlayControl extends React.Component<Props> {
 
   scheduleNextStep = () => {
     this.clearPlayTimeOut();
-    const {stepDuration} = this.props;
+    const { stepDuration } = this.props;
     this.playTimeout = setTimeout(this.nextStep, stepDuration);
   };
 
   nextStep = () => {
-    const {isPlaying, speed} = this.props;
+    const { isPlaying, speed } = this.props;
     if (isPlaying) {
-      const {interval, extent, current, onAdvance} = this.props;
+      const { interval, extent, current, onAdvance } = this.props;
       // @ts-ignore
       const numSteps = interval.count(extent[0], extent[1]);
       const next = interval.offset(current, speed * Math.max(1, Math.floor(numSteps / 60)));
       if (next > extent[1]) {
-        this.stop();
+        if (this.props.isLooping) {
+          onAdvance(next);
+          this.scheduleNextStep();
+        } else {
+          this.stop();
+        }
       } else {
         onAdvance(next);
         this.scheduleNextStep();
@@ -99,7 +105,7 @@ class PlayControl extends React.Component<Props> {
   };
 
   render() {
-    const {isPlaying, darkMode} = this.props;
+    const { isPlaying, darkMode } = this.props;
     const handleTogglePlay = () => {
       if (isPlaying) {
         this.stop();
