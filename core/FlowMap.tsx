@@ -1,5 +1,6 @@
 import { DeckGL } from '@deck.gl/react';
 import { MapController, MapView } from '@deck.gl/core';
+import { GoogleMapsOverlay } from '@deck.gl/google-maps';
 import * as React from 'react';
 import {
   ReactNode,
@@ -130,7 +131,7 @@ import { findAppropriateZoomLevel } from '@flowmap.gl/cluster';
 import { useRouter } from 'next/router';
 import { SPREADSHEET_KEY_RE, getFlowsSheetKey, makeGSheetsMapUrl } from '../components/constants';
 import { useMeasure } from 'react-use';
-import { DEFAULT_MAPBOX_ACCESS_TOKEN } from './config';
+import { DEFAULT_MAPBOX_ACCESS_TOKEN, DEFAULT_GOOGLE_MAPS_API_KEY, DEFAULT_GOOGLE_MAPS_MAP_ID } from './config';
 
 const CONTROLLER_OPTIONS = {
   type: MapController,
@@ -269,10 +270,42 @@ const FlowMap: React.FC<Props> = (props) => {
   const initialState = useMemo<State>(() => getInitialState(config, router.query), [config]);
 
   const outerRef = useRef<HTMLDivElement>(null);
+  const googleMapRef = useRef<any>(null);
+  const googleOverlayRef = useRef<any>(null);
+  const googleMapContainerRef = useRef<HTMLDivElement>(null);
 
   const [state, dispatch] = useReducer<Reducer<State, Action>>(reducer, initialState);
   const [mapDrawingEnabled, setMapDrawingEnabled] = useState(false);
+  const [googleMapsReady, setGoogleMapsReady] = useState(false);
   const { selectedTimeRange } = state;
+
+  // Check if Google Maps API is loaded
+  const googleMapsApiKey = config[ConfigPropName.GOOGLE_MAPS_API_KEY] || DEFAULT_GOOGLE_MAPS_API_KEY;
+  const googleMapsMapId = config[ConfigPropName.GOOGLE_MAPS_MAP_ID] || DEFAULT_GOOGLE_MAPS_MAP_ID;
+
+  useEffect(() => {
+    if (!googleMapsApiKey) return;
+
+    const checkGoogleMaps = () => {
+      if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps) {
+        setGoogleMapsReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (checkGoogleMaps()) return;
+
+    // Poll for Google Maps to load (script is async/defer)
+    const interval = setInterval(() => {
+      if (checkGoogleMaps()) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [googleMapsApiKey]);
 
   const timeGranularity = getTimeGranularity(state, props);
   const timeExtent = getTimeExtent(state, props);
@@ -674,39 +707,7 @@ const FlowMap: React.FC<Props> = (props) => {
     }
   };
 
-  if (locationsFetch.loading) {
-    return <LoadingSpinner />;
-  }
-  if (locationsFetch.error || flowsFetch.error) {
-    return (
-      <Message>
-        {spreadSheetKey ? (
-          <>
-            <p>
-              Oops… Could not fetch data from{` `}
-              <a href={`https://docs.google.com/spreadsheets/d/${spreadSheetKey}`}>
-                this spreadsheet
-              </a>
-              .{` `}
-            </p>
-            <p>
-              If you are the owner of this spreadsheet, make sure you have shared it by doing the
-              following:
-              <ol>
-                <li>Click the “Share” button in the spreadsheet</li>
-                <li>
-                  Change the selection from “Restricted” to “Anyone with the link” in the drop-down
-                  under “Get link”
-                </li>
-              </ol>
-            </p>
-          </>
-        ) : (
-          <p>Oops… Could not fetch data</p>
-        )}
-      </Message>
-    );
-  }
+
   const searchBoxLocations = getLocationsForSearchBox(state, props);
   const title = config[ConfigPropName.TITLE];
   const description = config[ConfigPropName.DESCRIPTION];
@@ -718,6 +719,7 @@ const FlowMap: React.FC<Props> = (props) => {
   const diffMode = getDiffMode(state, props);
   const darkMode = getDarkMode(state, props);
   const mapboxMapStyle = getMapboxMapStyle(state, props);
+  const useGoogleMaps = googleMapsReady && !!googleMapsApiKey;
 
   const getHighlightForZoom = () => {
     const { highlight, clusteringEnabled } = state;
@@ -954,6 +956,128 @@ const FlowMap: React.FC<Props> = (props) => {
     return layers;
   };
 
+  // Google Maps initialization effect
+  useEffect(() => {
+    if (!useGoogleMaps || !googleMapContainerRef.current || googleMapRef.current) return;
+
+    const google = (window as any).google;
+    const map = new google.maps.Map(googleMapContainerRef.current, {
+      center: { lat: viewport.latitude, lng: viewport.longitude },
+      zoom: viewport.zoom,
+      tilt: viewport.pitch,
+      heading: viewport.bearing,
+      mapId: googleMapsMapId || undefined,
+      disableDefaultUI: true,
+      gestureHandling: 'greedy',
+    });
+
+    const overlay = new GoogleMapsOverlay({
+      layers: getLayers(),
+    });
+
+    overlay.setMap(map);
+    googleMapRef.current = map;
+    googleOverlayRef.current = overlay;
+
+    // Listen for map changes and sync back to state
+    map.addListener('center_changed', () => {
+      const center = map.getCenter();
+      if (center) {
+        dispatch({
+          type: ActionType.SET_VIEWPORT,
+          viewport: {
+            ...viewport,
+            latitude: center.lat(),
+            longitude: center.lng(),
+          },
+        });
+      }
+    });
+
+    map.addListener('zoom_changed', () => {
+      const zoom = map.getZoom();
+      if (zoom !== undefined) {
+        dispatch({
+          type: ActionType.SET_VIEWPORT,
+          viewport: {
+            ...viewport,
+            zoom,
+          },
+        });
+      }
+    });
+
+    return () => {
+      if (googleOverlayRef.current) {
+        googleOverlayRef.current.finalize();
+        googleOverlayRef.current = null;
+      }
+      googleMapRef.current = null;
+    };
+  }, [useGoogleMaps, googleMapsMapId, locationsFetch.loading]);
+
+  // Update Google Maps overlay layers when data changes
+  useEffect(() => {
+    if (googleOverlayRef.current && useGoogleMaps) {
+      googleOverlayRef.current.setProps({ layers: getLayers() });
+    }
+  }, [flows, locations, state.animationEnabled, state.darkMode, state.locationTotalsEnabled, state.colorSchemeKey, state.fadeAmount, state.highlight, time, useGoogleMaps]);
+
+  // Sync viewport changes to Google Maps
+  useEffect(() => {
+    if (googleMapRef.current && useGoogleMaps) {
+      const map = googleMapRef.current;
+      const currentCenter = map.getCenter();
+      const currentZoom = map.getZoom();
+
+      // Only update if values are significantly different to avoid loops
+      if (currentCenter) {
+        const latDiff = Math.abs(currentCenter.lat() - viewport.latitude);
+        const lngDiff = Math.abs(currentCenter.lng() - viewport.longitude);
+        if (latDiff > 0.0001 || lngDiff > 0.0001) {
+          map.panTo({ lat: viewport.latitude, lng: viewport.longitude });
+        }
+      }
+      if (currentZoom !== undefined && Math.abs(currentZoom - viewport.zoom) > 0.1) {
+        map.setZoom(viewport.zoom);
+      }
+    }
+  }, [viewport.latitude, viewport.longitude, viewport.zoom, useGoogleMaps]);
+
+  if (locationsFetch.loading) {
+    return <LoadingSpinner />;
+  }
+  if (locationsFetch.error || flowsFetch.error) {
+    return (
+      <Message>
+        {spreadSheetKey ? (
+          <>
+            <p>
+              Oops… Could not fetch data from{` `}
+              <a href={`https://docs.google.com/spreadsheets/d/${spreadSheetKey}`}>
+                this spreadsheet
+              </a>
+              .{` `}
+            </p>
+            <p>
+              If you are the owner of this spreadsheet, make sure you have shared it by doing the
+              following:
+              <ol>
+                <li>Click the “Share” button in the spreadsheet</li>
+                <li>
+                  Change the selection from “Restricted” to “Anyone with the link” in the drop-down
+                  under “Get link”
+                </li>
+              </ol>
+            </p>
+          </>
+        ) : (
+          <p>Oops… Could not fetch data</p>
+        )}
+      </Message>
+    );
+  }
+
   const { width, height } = getContainerClientRect() ?? {};
   return (
     <NoScrollContainer
@@ -969,38 +1093,53 @@ const FlowMap: React.FC<Props> = (props) => {
         baseMapOpacity={state.baseMapOpacity / 100}
         cursor={mapDrawingEnabled ? 'crosshair' : undefined}
       >
-        <DeckGL
-          ref={deckRef}
-          controller={CONTROLLER_OPTIONS}
-          viewState={{
-            ...viewport,
-            width, // passing dimensions prevents half blank map on resize
-            height,
-          }}
-          views={[new MapView({ id: 'map', repeat: true })]}
-          onViewStateChange={handleViewStateChange}
-          layers={getLayers()}
-          parameters={{ clearColor: darkMode ? [0, 0, 0, 1] : [255, 255, 255, 1] }}
-        >
-          {baseMapEnabled && (
-            <ReactMapGl
-              id="map"
-              viewState={viewport as any}
-              mapLib={Object.assign({}, maplibregl, {
-                supported: (maplibregl as any).supported || (() => true),
-              })}
-              mapboxAccessToken={mapboxAccessToken || ''}
-              mapStyle={mapboxMapStyle}
-              style={{ width: '100%', height: '100%' }}
-            />
-          )}
-          {/* {mapDrawingEnabled && (
-            <MapDrawingEditor
-              mapDrawingMode={MapDrawingMode.POLYGON}
-              onFeatureDrawn={handleMapFeatureDrawn}
-            />
-          )} */}
-        </DeckGL>
+        {useGoogleMaps ? (
+          /* Google Maps mode - the overlay is managed by useEffect hooks */
+          <div
+            ref={googleMapContainerRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+            }}
+          />
+        ) : (
+          /* Fallback to Mapbox/MapLibre mode */
+          <DeckGL
+            ref={deckRef}
+            controller={CONTROLLER_OPTIONS}
+            viewState={{
+              ...viewport,
+              width, // passing dimensions prevents half blank map on resize
+              height,
+            }}
+            views={[new MapView({ id: 'map', repeat: true })]}
+            onViewStateChange={handleViewStateChange}
+            layers={getLayers()}
+            parameters={{ clearColor: darkMode ? [0, 0, 0, 1] : [255, 255, 255, 1] }}
+          >
+            {baseMapEnabled && (
+              <ReactMapGl
+                id="map"
+                viewState={viewport as any}
+                mapLib={Object.assign({}, maplibregl, {
+                  supported: (maplibregl as any).supported || (() => true),
+                })}
+                mapboxAccessToken={mapboxAccessToken || ''}
+                mapStyle={mapboxMapStyle}
+                style={{ width: '100%', height: '100%' }}
+              />
+            )}
+            {/* {mapDrawingEnabled && (
+              <MapDrawingEditor
+                mapDrawingMode={MapDrawingMode.POLYGON}
+                onFeatureDrawn={handleMapFeatureDrawn}
+              />
+            )} */}
+          </DeckGL>
+        )}
       </DeckGLOuter>
       {timeExtent && timeGranularity && totalCountsByTime && selectedTimeRange && (
         <Absolute bottom={20} left={100} right={200}>

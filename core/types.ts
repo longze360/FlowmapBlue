@@ -20,6 +20,9 @@ export enum ConfigPropName {
   HIDE_DATA_LINK = 'dataLink.hide',
   FLOWS_SHEETS = 'flows.sheets',
   MAP_STYLE = 'mapStyle',
+  GOOGLE_MAPS_API_KEY = 'googleMaps.apiKey',
+  // GOOGLE_MAPS_API_KEY = 'AIzaSyA2vil4YbY8VJypagiw0bhjE1p2dTeSrcA',
+  GOOGLE_MAPS_MAP_ID = 'googleMaps.mapId',
 }
 
 export interface ConfigProp {

@@ -1,4 +1,4 @@
-import {Html, Head, Main, NextScript} from 'next/document';
+import { Html, Head, Main, NextScript } from 'next/document';
 import manifest from '../public/manifest.json';
 import * as React from 'react';
 const fontUrl = 'https://fonts.googleapis.com/css?family=Sarabun:200,400,700&display=swap';
@@ -32,6 +32,13 @@ export default function Document() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="FlowmapBlue" />
+        {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
+          <script
+            src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=visualization`}
+            async
+            defer
+          />
+        )}
       </Head>
       <body>
         <Main />

@@ -4,9 +4,13 @@ export const DEFAULT_MAP_STYLE_LIGHT = process.env.NEXT_PUBLIC_MapboxMapStyle_Li
 export const DEFAULT_MAP_STYLE_DARK = process.env.NEXT_PUBLIC_MapboxMapStyle_Dark;
 export const DEFAULT_MAP_STYLE_OSM = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 export const DEFAULT_MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MapboxAccessToken;
+export const DEFAULT_GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+export const DEFAULT_GOOGLE_MAPS_MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID;
 export const DEFAULT_CONFIG: Config = {
   [ConfigPropName.MAPBOX_ACCESS_TOKEN]: DEFAULT_MAPBOX_ACCESS_TOKEN,
   [ConfigPropName.MAP_STYLE]: DEFAULT_MAP_STYLE_OSM,
+  [ConfigPropName.GOOGLE_MAPS_API_KEY]: DEFAULT_GOOGLE_MAPS_API_KEY,
+  [ConfigPropName.GOOGLE_MAPS_MAP_ID]: DEFAULT_GOOGLE_MAPS_MAP_ID,
   [ConfigPropName.COLORS_DARK_MODE]: 'no', // Default to light mode for OSM basemap
   'msg.locationTooltip.incoming': 'Incoming trips',
   'msg.locationTooltip.outgoing': 'Outgoing trips',
