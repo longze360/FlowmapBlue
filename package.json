@@ -15,10 +15,10 @@
     "@blueprintjs/icons": "^4.0.0-beta.8",
     "@blueprintjs/select": "^4.0.0-beta.8",
     "@deck.gl/core": "8.8.17",
+    "@deck.gl/google-maps": "8.8.17",
     "@deck.gl/layers": "8.8.17",
     "@deck.gl/mesh-layers": "8.8.17",
     "@deck.gl/react": "8.8.17",
-    "@deck.gl/google-maps": "8.8.17",
     "@emotion/core": "^10.0.27",
     "@emotion/styled": "^10.0.27",
     "@flowmap.gl/cluster": "^7.3.0",
@@ -97,7 +97,7 @@
     "next-transpile-modules": "^9.1.0",
     "prettier": "^2.4.1",
     "prisma": "5.22.0",
-    "typescript": "4.4.4"
+    "typescript": "^5.9.3"
   },
   "license": "CC BY-NC 4.0",
   "volta": {

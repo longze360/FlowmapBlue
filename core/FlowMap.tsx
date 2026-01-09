@@ -135,6 +135,7 @@ import { DEFAULT_MAPBOX_ACCESS_TOKEN, DEFAULT_GOOGLE_MAPS_API_KEY, DEFAULT_GOOGL
 
 const CONTROLLER_OPTIONS = {
   type: MapController,
+  dragPan: true,
   doubleClickZoom: false,
   dragRotate: true,
   touchRotate: true,
@@ -969,9 +970,15 @@ const FlowMap: React.FC<Props> = (props) => {
       mapId: googleMapsMapId || undefined,
       disableDefaultUI: true,
       gestureHandling: 'greedy',
+      draggable: true,
+      zoomControl: false,
+      scrollwheel: true,
+      disableDoubleClickZoom: false,
+      keyboardShortcuts: true,
     });
 
     const overlay = new GoogleMapsOverlay({
+      interleaved: true,
       layers: getLayers(),
     });
 
